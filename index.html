@@ -3,218 +3,419 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Advanced Application Analytics Dashboard</title>
+  <title>AI-Powered Analytics Dashboard | Premium</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <div class="container-fluid">
-    <header class="d-flex justify-content-between align-items-center py-3 mb-4 border-bottom">
-      <div class="d-flex align-items-center">
-        <div class="dashboard-logo me-3">
-          <i class="bi bi-bar-chart-line"></i>
-        </div>
-        <div>
-          <h1 class="h4 mb-0">Application Analytics Dashboard</h1>
-          <div class="text-muted small">Real-time monitoring and insights</div>
-        </div>
-      </div>
-      <div id="lastUpdated" class="text-muted small text-end">
-        <i class="bi bi-clock-history me-1"></i>
-        <span>Loading data...</span>
-      </div>
-    </header>
-
-    <div class="row mb-4">
-      <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-          <div class="card-body">
-            <h5 class="card-title d-flex justify-content-between align-items-center">
-              <span><i class="bi bi-funnel me-2"></i>Filters</span>
-              <button id="resetFilters" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-arrow-counterclockwise"></i> Reset
-              </button>
-            </h5>
-            <div class="mb-3">
-              <label for="districtFilter" class="form-label">District</label>
-              <select id="districtFilter" class="form-select">
-                <option value="" selected>All Districts</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label for="mandalFilter" class="form-label">Mandal</label>
-              <select id="mandalFilter" class="form-select" disabled>
-                <option value="" selected>All Mandals</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label for="secretariatFilter" class="form-label">Secretariat</label>
-              <select id="secretariatFilter" class="form-select" disabled>
-                <option value="" selected>All Secretariats</option>
-              </select>
-            </div>
-            <div class="alert alert-info p-2 small mb-0">
-              <i class="bi bi-info-circle"></i> Select filters to drill down into the data
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-8">
-        <div class="card shadow-sm h-100">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h5 class="card-title mb-0">
-                <i class="bi bi-graph-up me-2"></i>Application Trends
-              </h5>
-              <div class="btn-group">
-                <button class="btn btn-sm btn-outline-primary chart-type active" data-type="bar">
-                  <i class="bi bi-bar-chart"></i> Bar
-                </button>
-                <button class="btn btn-sm btn-outline-primary chart-type" data-type="pie">
-                  <i class="bi bi-pie-chart"></i> Pie
-                </button>
-                <button class="btn btn-sm btn-outline-primary chart-type" data-type="line">
-                  <i class="bi bi-graph-up"></i> Line
-                </button>
-                <button class="btn btn-sm btn-outline-primary chart-type" data-type="doughnut">
-                  <i class="bi bi-circle"></i> Doughnut
-                </button>
-              </div>
-            </div>
-            <div class="chart-container">
-              <canvas id="chart"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
+<body class="dark-mode">
+  <div class="preloader">
+    <div class="loader">
+      <div class="loader-square"></div>
+      <div class="loader-square"></div>
+      <div class="loader-square"></div>
+      <div class="loader-square"></div>
+      <div class="loader-square"></div>
+      <div class="loader-square"></div>
+      <div class="loader-square"></div>
     </div>
-
-    <div class="row mb-4">
-      <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-          <div class="card-body">
-            <h5 class="card-title">
-              <i class="bi bi-speedometer2 me-2"></i>Key Metrics
-            </h5>
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <div class="metric-card bg-primary bg-opacity-10 border-primary">
-                  <div class="metric-value text-primary" id="totalApplications">0</div>
-                  <div class="metric-label">Total Applications</div>
-                  <div class="metric-change" id="appChange">
-                    <i class="bi bi-dash-circle"></i> <span>0%</span>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6 mb-3">
-                <div class="metric-card bg-success bg-opacity-10 border-success">
-                  <div class="metric-value text-success" id="uniqueDistricts">0</div>
-                  <div class="metric-label">Districts Covered</div>
-                  <div class="metric-change" id="districtChange">
-                    <i class="bi bi-dash-circle"></i> <span>0%</span>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6 mb-3">
-                <div class="metric-card bg-info bg-opacity-10 border-info">
-                  <div class="metric-value text-info" id="uniqueMandal">0</div>
-                  <div class="metric-label">Mandals Covered</div>
-                  <div class="metric-change" id="mandalChange">
-                    <i class="bi bi-dash-circle"></i> <span>0%</span>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6 mb-3">
-                <div class="metric-card bg-warning bg-opacity-10 border-warning">
-                  <div class="metric-value text-warning" id="uniqueSecretariat">0</div>
-                  <div class="metric-label">Secretariats Covered</div>
-                  <div class="metric-change" id="secretariatChange">
-                    <i class="bi bi-dash-circle"></i> <span>0%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h5 class="card-title mb-0">
-                <i class="bi bi-clock-history me-2"></i>Recent Applications
-              </h5>
-              <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="recentDropdown" data-bs-toggle="dropdown">
-                  Last 5 entries
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                  <li><a class="dropdown-item recent-filter" href="#" data-value="5">Last 5 entries</a></li>
-                  <li><a class="dropdown-item recent-filter" href="#" data-value="10">Last 10 entries</a></li>
-                  <li><a class="dropdown-item recent-filter" href="#" data-value="20">Last 20 entries</a></li>
-                </ul>
-              </div>
-            </div>
-            <div class="table-responsive">
-              <table class="table table-hover table-sm" id="recentTable">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>District</th>
-                    <th>Mandal</th>
-                    <th>Secretariat</th>
-                    <th class="text-end">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td colspan="5" class="text-center text-muted py-4">
-                      <div class="spinner-border spinner-border-sm" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                      </div>
-                      Loading data...
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card shadow-sm mb-4">
-      <div class="card-body">
-        <h5 class="card-title">
-          <i class="bi bi-map me-2"></i>Geographical Distribution
-        </h5>
-        <div id="mapContainer" class="ratio ratio-16x9 bg-light rounded">
-          <div class="d-flex justify-content-center align-items-center h-100">
-            <div class="text-center text-muted">
-              <i class="bi bi-map fs-1"></i>
-              <p class="mt-2">Map visualization coming soon</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <footer class="mt-5 py-3 text-center text-muted small border-top">
-      <div class="d-flex justify-content-center align-items-center">
-        <div class="me-3">Data refreshes automatically every 5 minutes</div>
-        <button id="refreshNow" class="btn btn-sm btn-outline-secondary">
-          <i class="bi bi-arrow-repeat"></i> Refresh Now
-        </button>
-      </div>
-      <div class="mt-2">© 2023 Advanced Analytics Dashboard | v2.1.0</div>
-    </footer>
   </div>
 
-  <!-- Modal for detailed view -->
+  <div class="container-fluid dashboard-container">
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="dashboard-logo">
+          <i class="fas fa-chart-network"></i>
+        </div>
+        <h1>Analytics<span>Pro</span></h1>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="active"><a href="#"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
+        <li><a href="#"><i class="fas fa-map-marked-alt"></i> Geo Analytics</a></li>
+        <li><a href="#"><i class="fas fa-calendar-alt"></i> Timeline</a></li>
+        <li><a href="#"><i class="fas fa-database"></i> Data Explorer</a></li>
+        <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <button class="theme-toggle">
+          <i class="fas fa-moon"></i>
+          <i class="fas fa-sun"></i>
+        </button>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <header class="main-header">
+        <div class="header-left">
+          <button class="sidebar-toggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="breadcrumb">
+            <span>Dashboard</span>
+            <span>/</span>
+            <span>Application Analytics</span>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search...">
+          </div>
+          <div class="header-actions">
+            <button class="btn-notification">
+              <i class="fas fa-bell"></i>
+              <span class="badge">3</span>
+            </button>
+            <div class="user-profile">
+              <img src="https://ui-avatars.com/api/?name=Admin&background=4e73df&color=fff" alt="User">
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="dashboard-content">
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="card overview-card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <h2 class="card-title">Application Analytics Dashboard</h2>
+                  <div class="card-actions">
+                    <button class="btn btn-sm btn-outline-primary export-btn">
+                      <i class="fas fa-file-export"></i> Export
+                    </button>
+                    <div class="dropdown d-inline-block">
+                      <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="viewOptions" data-bs-toggle="dropdown">
+                        <i class="fas fa-sliders-h"></i> View Options
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" id="toggleTrendLine"><i class="fas fa-chart-line"></i> Toggle Trend Line</a></li>
+                        <li><a class="dropdown-item" href="#" id="toggleDataLabels"><i class="fas fa-tag"></i> Toggle Data Labels</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" id="fullscreenChart"><i class="fas fa-expand"></i> Fullscreen Chart</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div id="lastUpdated" class="text-muted small">
+                  <i class="fas fa-sync-alt fa-spin"></i> Loading data...
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mb-4">
+          <div class="col-xl-3 col-md-6">
+            <div class="card stat-card">
+              <div class="card-body">
+                <div class="stat-icon bg-primary">
+                  <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="stat-info">
+                  <h3 id="totalApplications">0</h3>
+                  <p>Total Applications</p>
+                  <div class="stat-change positive" id="appChange">
+                    <i class="fas fa-arrow-up"></i> <span>0%</span> vs last period
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-md-6">
+            <div class="card stat-card">
+              <div class="card-body">
+                <div class="stat-icon bg-success">
+                  <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <div class="stat-info">
+                  <h3 id="uniqueDistricts">0</h3>
+                  <p>Districts Covered</p>
+                  <div class="stat-change" id="districtChange">
+                    <i class="fas fa-arrow-up"></i> <span>0%</span> vs last period
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-md-6">
+            <div class="card stat-card">
+              <div class="card-body">
+                <div class="stat-icon bg-info">
+                  <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="stat-info">
+                  <h3 id="uniqueMandal">0</h3>
+                  <p>Mandals Covered</p>
+                  <div class="stat-change" id="mandalChange">
+                    <i class="fas fa-arrow-up"></i> <span>0%</span> vs last period
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-md-6">
+            <div class="card stat-card">
+              <div class="card-body">
+                <div class="stat-icon bg-warning">
+                  <i class="fas fa-building"></i>
+                </div>
+                <div class="stat-info">
+                  <h3 id="uniqueSecretariat">0</h3>
+                  <p>Secretariats Covered</p>
+                  <div class="stat-change" id="secretariatChange">
+                    <i class="fas fa-arrow-up"></i> <span>0%</span> vs last period
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mb-4">
+          <div class="col-lg-8">
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="card-title">
+                    <i class="fas fa-chart-bar me-2"></i>Application Distribution
+                  </h5>
+                  <div class="btn-group chart-type-group">
+                    <button class="btn btn-sm btn-outline-primary chart-type active" data-type="bar">
+                      <i class="fas fa-chart-bar"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary chart-type" data-type="line">
+                      <i class="fas fa-chart-line"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary chart-type" data-type="pie">
+                      <i class="fas fa-chart-pie"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary chart-type" data-type="doughnut">
+                      <i class="fas fa-chart-donut"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary chart-type" data-type="polarArea">
+                      <i class="fas fa-chart-polar"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="chart-container">
+                  <canvas id="mainChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="card-title">
+                    <i class="fas fa-filter me-2"></i>Data Filters
+                  </h5>
+                  <button id="resetFilters" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-redo"></i> Reset
+                  </button>
+                </div>
+                <div class="filter-section">
+                  <div class="mb-3">
+                    <label for="districtFilter" class="form-label">District</label>
+                    <select id="districtFilter" class="form-select searchable-select">
+                      <option value="" selected>All Districts</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label for="mandalFilter" class="form-label">Mandal</label>
+                    <select id="mandalFilter" class="form-select searchable-select" disabled>
+                      <option value="" selected>All Mandals</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label for="secretariatFilter" class="form-label">Secretariat</label>
+                    <select id="secretariatFilter" class="form-select searchable-select" disabled>
+                      <option value="" selected>All Secretariats</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label for="dateRangeFilter" class="form-label">Date Range</label>
+                    <div class="input-group">
+                      <input type="text" class="form-control date-range-picker" id="dateRangeFilter" placeholder="Select date range">
+                      <button class="btn btn-outline-secondary" type="button" id="clearDateFilter">
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="showAnomalies" checked>
+                    <label class="form-check-label" for="showAnomalies">Highlight Anomalies</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mb-4">
+          <div class="col-lg-6">
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="card-title">
+                    <i class="fas fa-clock me-2"></i>Recent Applications
+                  </h5>
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="recentDropdown" data-bs-toggle="dropdown">
+                      Last 5 entries
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li><a class="dropdown-item recent-filter" href="#" data-value="5">Last 5 entries</a></li>
+                      <li><a class="dropdown-item recent-filter" href="#" data-value="10">Last 10 entries</a></li>
+                      <li><a class="dropdown-item recent-filter" href="#" data-value="20">Last 20 entries</a></li>
+                      <li><a class="dropdown-item recent-filter" href="#" data-value="50">Last 50 entries</a></li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-hover" id="recentTable">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>District</th>
+                        <th>Mandal</th>
+                        <th>Secretariat</th>
+                        <th class="text-end">Date</th>
+                        <th class="text-end">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                          <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                          </div>
+                          Loading data...
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="card-title">
+                    <i class="fas fa-map-marked-alt me-2"></i>Geographical Heatmap
+                  </h5>
+                  <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-primary" id="zoomInMap">
+                      <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" id="zoomOutMap">
+                      <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" id="resetMap">
+                      <i class="fas fa-globe"></i>
+                    </button>
+                  </div>
+                </div>
+                <div id="mapContainer" class="ratio ratio-16x9">
+                  <div class="map-placeholder">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <p>Interactive map loading...</p>
+                  </div>
+                </div>
+                <div class="map-legend mt-3">
+                  <div class="legend-title">Applications Density</div>
+                  <div class="legend-scale">
+                    <div class="legend-item" style="background-color: #f7fbff;">Low</div>
+                    <div class="legend-item" style="background-color: #c6dbef;"></div>
+                    <div class="legend-item" style="background-color: #6baed6;"></div>
+                    <div class="legend-item" style="background-color: #2171b5;"></div>
+                    <div class="legend-item" style="background-color: #08306b;">High</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="card-title">
+                    <i class="fas fa-chart-line me-2"></i>Trend Analysis
+                  </h5>
+                  <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-primary trend-period active" data-period="7d">
+                      7 Days
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary trend-period" data-period="30d">
+                      30 Days
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary trend-period" data-period="90d">
+                      90 Days
+                    </button>
+                  </div>
+                </div>
+                <div class="chart-container">
+                  <canvas id="trendChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="footer-text">
+                <strong>AnalyticsPro Dashboard</strong> v3.0.0 | © 2023 All Rights Reserved
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Help Center</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Fullscreen Chart Modal -->
+  <div class="modal fade" id="fullscreenChartModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="fullscreenChartTitle">Chart Preview</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="chart-container-fullscreen">
+            <canvas id="fullscreenChartCanvas"></canvas>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="downloadChart">
+            <i class="fas fa-download"></i> Download
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Detail Modal -->
   <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
@@ -223,21 +424,34 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body" id="modalContent">
-          Loading details...
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="printDetails">
+            <i class="fas fa-print"></i> Print
+          </button>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-trendline"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
