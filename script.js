@@ -3,24 +3,72 @@ const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 let rawData = [];
 let previousData = [];
-let chart = null;
+let mainChart = null;
+let trendChart = null;
+let fullscreenChart = null;
 let currentChartType = 'bar';
-let refreshTimer = null;
 let recentEntriesCount = 5;
+let showTrendLine = true;
+let showDataLabels = true;
+let refreshTimer = null;
+let dateRangeFilter = null;
 
 // Initialize the dashboard
 function initDashboard() {
+  // Hide preloader when everything is loaded
+  setTimeout(() => {
+    document.querySelector('.preloader').style.opacity = '0';
+    setTimeout(() => {
+      document.querySelector('.preloader').style.display = 'none';
+    }, 500);
+  }, 1000);
+
   setupEventListeners();
+  initializePlugins();
   loadData();
   startAutoRefresh();
 }
 
+// Initialize plugins
+function initializePlugins() {
+  // Initialize select2 for searchable dropdowns
+  $('.searchable-select').select2({
+    width: '100%',
+    placeholder: $(this).data('placeholder'),
+    allowClear: true
+  });
+
+  // Initialize date range picker
+  dateRangeFilter = $('.date-range-picker').daterangepicker({
+    opens: 'left',
+    autoUpdateInput: false,
+    locale: {
+      cancelLabel: 'Clear'
+    }
+  });
+
+  dateRangeFilter.on('apply.daterangepicker', function(ev, picker) {
+    $(this).val(picker.startDate.format('MM/DD/YYYY') + ' - ' + picker.endDate.format('MM/DD/YYYY'));
+    updateDashboard();
+  });
+
+  dateRangeFilter.on('cancel.daterangepicker', function(ev, picker) {
+    $(this).val('');
+    updateDashboard();
+  });
+}
+
 // Set up all event listeners
 function setupEventListeners() {
+  // Filter dropdowns
   document.getElementById("districtFilter").addEventListener("change", onDistrictChange);
   document.getElementById("mandalFilter").addEventListener("change", onMandalChange);
   document.getElementById("secretariatFilter").addEventListener("change", updateDashboard);
+  
+  // Reset filters button
   document.getElementById("resetFilters").addEventListener("click", resetFilters);
+  
+  // Manual refresh button
   document.getElementById("refreshNow").addEventListener("click", loadData);
   
   // Chart type buttons
@@ -50,6 +98,65 @@ function setupEventListeners() {
       showDetailsModal(row.dataset.id);
     }
   });
+  
+  // Clear date filter
+  document.getElementById("clearDateFilter").addEventListener("click", function() {
+    dateRangeFilter.val('').trigger('change');
+  });
+  
+  // View options
+  document.getElementById("toggleTrendLine").addEventListener("click", function(e) {
+    e.preventDefault();
+    showTrendLine = !showTrendLine;
+    updateDashboard();
+  });
+  
+  document.getElementById("toggleDataLabels").addEventListener("click", function(e) {
+    e.preventDefault();
+    showDataLabels = !showDataLabels;
+    updateDashboard();
+  });
+  
+  document.getElementById("fullscreenChart").addEventListener("click", function(e) {
+    e.preventDefault();
+    showFullscreenChart();
+  });
+  
+  // Trend period buttons
+  document.querySelectorAll(".trend-period").forEach(btn => {
+    btn.addEventListener("click", function() {
+      document.querySelectorAll(".trend-period").forEach(b => b.classList.remove("active"));
+      this.classList.add("active");
+      updateTrendChart(this.dataset.period);
+    });
+  });
+  
+  // Theme toggle
+  document.querySelector(".theme-toggle").addEventListener("click", toggleTheme);
+  
+  // Sidebar toggle for mobile
+  document.querySelector(".sidebar-toggle").addEventListener("click", toggleSidebar);
+  
+  // Print button in modal
+  document.getElementById("printDetails").addEventListener("click", printDetails);
+  
+  // Download chart button
+  document.getElementById("downloadChart").addEventListener("click", downloadChart);
+}
+
+// Toggle dark/light theme
+function toggleTheme() {
+  document.body.classList.toggle("dark-mode");
+  localStorage.setItem("theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
+  
+  // Recreate charts to update their theme
+  updateDashboard();
+  updateTrendChart();
+}
+
+// Toggle sidebar for mobile
+function toggleSidebar() {
+  document.querySelector(".sidebar").classList.toggle("active");
 }
 
 // Load data from Google Sheets
@@ -74,40 +181,43 @@ function loadData() {
       updateDashboard();
       document.body.classList.remove("refreshing");
       
-      // Add fade-in animation to cards
-      document.querySelectorAll(".card").forEach(card => {
-        card.classList.add("fade-in");
-      });
+      // Show success toast
+      showToast('Data refreshed successfully', 'success');
     })
     .catch(error => {
       console.error("Error loading data:", error);
       document.body.classList.remove("refreshing");
-      showErrorToast("Failed to load data. Please try again later.");
+      showToast('Failed to load data. Please try again later.', 'error');
     });
 }
 
-// Show error toast notification
-function showErrorToast(message) {
+// Show toast notification
+function showToast(message, type = 'info') {
   const toast = document.createElement("div");
-  toast.className = "position-fixed bottom-0 end-0 p-3";
-  toast.style.zIndex = "11";
+  toast.className = `toast-notification ${type}`;
   toast.innerHTML = `
-    <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="toast-header bg-danger text-white">
-        <strong class="me-auto">Error</strong>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-      <div class="toast-body">
-        ${message}
-      </div>
+    <div class="toast-icon">
+      ${type === 'success' ? '<i class="fas fa-check-circle"></i>' : 
+       type === 'error' ? '<i class="fas fa-exclamation-circle"></i>' : 
+       '<i class="fas fa-info-circle"></i>'}
     </div>
+    <div class="toast-message">${message}</div>
+    <button class="toast-close">&times;</button>
   `;
+  
   document.body.appendChild(toast);
   
   // Auto-remove after 5 seconds
   setTimeout(() => {
-    toast.remove();
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 300);
   }, 5000);
+  
+  // Close button
+  toast.querySelector('.toast-close').addEventListener('click', () => {
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 300);
+  });
 }
 
 // Start auto-refresh timer
@@ -120,7 +230,7 @@ function startAutoRefresh() {
 function updateLastUpdated() {
   const now = new Date();
   document.getElementById("lastUpdated").innerHTML = `
-    <i class="bi bi-clock-history me-1"></i>
+    <i class="fas fa-clock"></i>
     <span>Last updated: ${now.toLocaleTimeString()} - ${now.toLocaleDateString()}</span>
   `;
 }
@@ -162,6 +272,11 @@ function populateDropdown(id, values, enable = true) {
   }
   
   select.disabled = !enable || values.length === 0;
+  
+  // Trigger select2 update if it exists
+  if ($(select).hasClass('select2-hidden-accessible')) {
+    $(select).trigger('change');
+  }
 }
 
 // Reset all filters
@@ -169,28 +284,15 @@ function resetFilters() {
   document.getElementById("districtFilter").value = "";
   document.getElementById("mandalFilter").value = "";
   document.getElementById("secretariatFilter").value = "";
+  dateRangeFilter.val('').trigger('change');
+  
+  // Trigger select2 update if it exists
+  $('.searchable-select').trigger('change');
+  
   onDistrictChange();
   
   // Show confirmation toast
-  const toast = document.createElement("div");
-  toast.className = "position-fixed bottom-0 end-0 p-3";
-  toast.style.zIndex = "11";
-  toast.innerHTML = `
-    <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="toast-header bg-success text-white">
-        <strong class="me-auto">Filters Reset</strong>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-      <div class="toast-body">
-        All filters have been reset to default values.
-      </div>
-    </div>
-  `;
-  document.body.appendChild(toast);
-  
-  setTimeout(() => {
-    toast.remove();
-  }, 3000);
+  showToast('All filters have been reset', 'success');
 }
 
 // Handle district filter change
@@ -208,6 +310,7 @@ function onDistrictChange() {
   // If only one mandal, select it automatically
   if (mandals.length === 1) {
     document.getElementById("mandalFilter").value = mandals[0];
+    $(document.getElementById("mandalFilter")).trigger('change');
   }
   
   const secretariats = getUniqueSortedValues(filteredData, "Secretariat");
@@ -237,6 +340,7 @@ function onMandalChange() {
   // If only one secretariat, select it automatically
   if (secretariats.length === 1) {
     document.getElementById("secretariatFilter").value = secretariats[0];
+    $(document.getElementById("secretariatFilter")).trigger('change');
   }
   
   updateDashboard();
@@ -247,12 +351,37 @@ function filterData() {
   const district = document.getElementById('districtFilter').value;
   const mandal = document.getElementById('mandalFilter').value;
   const secretariat = document.getElementById('secretariatFilter').value;
+  const dateRange = dateRangeFilter.val();
 
-  return rawData.filter(row =>
-    (!district || row.District === district) &&
-    (!mandal || row.Mandal === mandal) &&
-    (!secretariat || row.Secretariat === secretariat)
-  );
+  let filteredData = [...rawData];
+
+  // Apply filters
+  if (district) {
+    filteredData = filteredData.filter(row => row.District === district);
+  }
+  
+  if (mandal) {
+    filteredData = filteredData.filter(row => row.Mandal === mandal);
+  }
+  
+  if (secretariat) {
+    filteredData = filteredData.filter(row => row.Secretariat === secretariat);
+  }
+  
+  // Apply date range filter if set
+  if (dateRange) {
+    const dates = dateRange.split(' - ');
+    const startDate = new Date(dates[0]);
+    const endDate = new Date(dates[1]);
+    
+    // Assuming we have a 'Date' field in the data
+    filteredData = filteredData.filter(row => {
+      const rowDate = row.Date ? new Date(row.Date) : new Date(row.timestamp);
+      return rowDate >= startDate && rowDate <= endDate;
+    });
+  }
+
+  return filteredData;
 }
 
 // Group data by key and count occurrences
@@ -264,8 +393,8 @@ function groupByCount(data, key) {
   }, {});
 }
 
-// Update the chart with filtered data
-function updateChart(data) {
+// Update the main chart with filtered data
+function updateMainChart(data) {
   const secretariatSelected = document.getElementById('secretariatFilter').value;
   const mandalSelected = document.getElementById('mandalFilter').value;
 
@@ -286,9 +415,9 @@ function updateChart(data) {
   const labels = Object.keys(grouped);
   const counts = Object.values(grouped);
 
-  if (chart) chart.destroy();
+  if (mainChart) mainChart.destroy();
 
-  const ctx = document.getElementById("chart").getContext("2d");
+  const ctx = document.getElementById("mainChart").getContext("2d");
   
   // Common chart configuration
   const commonConfig = {
@@ -299,7 +428,7 @@ function updateChart(data) {
         data: counts,
         backgroundColor: getChartColors(currentChartType, labels.length),
         borderColor: '#fff',
-        borderWidth: currentChartType === 'pie' || currentChartType === 'doughnut' ? 1 : 0
+        borderWidth: currentChartType === 'pie' || currentChartType === 'doughnut' || currentChartType === 'polarArea' ? 1 : 0
       }]
     },
     options: {
@@ -307,7 +436,7 @@ function updateChart(data) {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: (currentChartType === 'pie' || currentChartType === 'doughnut') ? 'right' : 'top',
+          position: (currentChartType === 'pie' || currentChartType === 'doughnut' || currentChartType === 'polarArea') ? 'right' : 'top',
           labels: {
             padding: 20,
             usePointStyle: true,
@@ -326,15 +455,30 @@ function updateChart(data) {
           }
         },
         datalabels: {
-          display: currentChartType === 'pie' || currentChartType === 'doughnut',
+          display: showDataLabels && (currentChartType === 'pie' || currentChartType === 'doughnut' || currentChartType === 'polarArea'),
           formatter: (value, context) => {
             const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
             const percentage = Math.round((value / total) * 100);
-            return `${percentage}%`;
+            return percentage > 5 ? `${percentage}%` : '';
           },
           color: '#fff',
           font: {
             weight: 'bold'
+          }
+        },
+        zoom: {
+          zoom: {
+            wheel: {
+              enabled: true,
+            },
+            pinch: {
+              enabled: true
+            },
+            mode: 'xy',
+          },
+          pan: {
+            enabled: true,
+            mode: 'xy',
           }
         }
       },
@@ -348,14 +492,14 @@ function updateChart(data) {
   // Create chart based on selected type
   switch (currentChartType) {
     case 'pie':
-      chart = new Chart(ctx, {
+      mainChart = new Chart(ctx, {
         type: 'pie',
         ...commonConfig,
         plugins: [ChartDataLabels]
       });
       break;
     case 'doughnut':
-      chart = new Chart(ctx, {
+      mainChart = new Chart(ctx, {
         type: 'doughnut',
         ...commonConfig,
         plugins: [ChartDataLabels],
@@ -365,8 +509,15 @@ function updateChart(data) {
         }
       });
       break;
+    case 'polarArea':
+      mainChart = new Chart(ctx, {
+        type: 'polarArea',
+        ...commonConfig,
+        plugins: [ChartDataLabels]
+      });
+      break;
     case 'line':
-      chart = new Chart(ctx, {
+      mainChart = new Chart(ctx, {
         type: 'line',
         ...commonConfig,
         options: {
@@ -381,7 +532,7 @@ function updateChart(data) {
       });
       break;
     default: // bar
-      chart = new Chart(ctx, {
+      mainChart = new Chart(ctx, {
         type: 'bar',
         ...commonConfig,
         options: {
@@ -397,12 +548,73 @@ function updateChart(data) {
   }
 }
 
+// Update trend chart
+function updateTrendChart(period = '7d') {
+  const days = parseInt(period);
+  const filteredData = filterData();
+  
+  // Group data by date (this is simplified - you'd need actual date fields in your data)
+  const dateGroups = filteredData.reduce((acc, item) => {
+    // This assumes you have a date field - adjust as needed for your data
+    const date = item.Date ? new Date(item.Date).toLocaleDateString() : new Date(item.timestamp).toLocaleDateString();
+    acc[date] = (acc[date] || 0) + 1;
+    return acc;
+  }, {});
+  
+  const labels = Object.keys(dateGroups).sort();
+  const counts = labels.map(date => dateGroups[date]);
+  
+  if (trendChart) trendChart.destroy();
+  
+  const ctx = document.getElementById("trendChart").getContext("2d");
+  
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Applications Trend',
+        data: counts,
+        backgroundColor: 'rgba(78, 115, 223, 0.05)',
+        borderColor: 'rgba(78, 115, 223, 1)',
+        borderWidth: 2,
+        pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            precision: 0
+          }
+        }
+      }
+    }
+  });
+}
+
 // Generate colors for chart based on type
 function getChartColors(type, count) {
-  if (type === 'pie' || type === 'doughnut') {
+  if (type === 'pie' || type === 'doughnut' || type === 'polarArea') {
     return generateColors(count, 0.7, 0.6);
   } else if (type === 'line') {
-    return ['#4e73df'];
+    return ['rgba(78, 115, 223, 1)'];
   } else { // bar
     return generateColors(count, 0.6, 0.8);
   }
@@ -467,12 +679,12 @@ function updateChangeIndicator(elementId, change) {
   const changeValue = Math.round(change);
   
   element.innerHTML = change === 0 
-    ? `<i class="bi bi-dash-circle"></i> <span>0%</span>`
+    ? `<i class="fas fa-equals"></i> <span>0%</span> vs last period`
     : change > 0 
-      ? `<i class="bi bi-arrow-up-circle"></i> <span>${Math.abs(changeValue)}%</span>`
-      : `<i class="bi bi-arrow-down-circle"></i> <span>${Math.abs(changeValue)}%</span>`;
+      ? `<i class="fas fa-arrow-up"></i> <span>${Math.abs(changeValue)}%</span> vs last period`
+      : `<i class="fas fa-arrow-down"></i> <span>${Math.abs(changeValue)}%</span> vs last period`;
   
-  element.className = "metric-change";
+  element.className = "stat-change";
   if (change > 0) {
     element.classList.add("positive");
   } else if (change < 0) {
@@ -490,7 +702,7 @@ function updateRecentTable(data) {
     .slice(0, recentEntriesCount);
   
   if (recentData.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No data available for current filters</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No data available for current filters</td></tr>';
     return;
   }
   
@@ -505,8 +717,21 @@ function updateRecentTable(data) {
       <td>${row.Mandal || 'Unknown'}</td>
       <td>${row.Secretariat || 'Unknown'}</td>
       <td class="text-end">${new Date(row.timestamp).toLocaleDateString()}</td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-outline-primary view-details" data-id="${row.ID}">
+          <i class="fas fa-eye"></i>
+        </button>
+      </td>
     `;
     tbody.appendChild(tr);
+  });
+  
+  // Add event listeners to view buttons
+  document.querySelectorAll('.view-details').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showDetailsModal(btn.dataset.id);
+    });
   });
 }
 
@@ -519,7 +744,7 @@ function showDetailsModal(id) {
   modalContent.innerHTML = `
     <div class="row">
       <div class="col-md-6">
-        <h6>Basic Information</h6>
+        <h6 class="section-title">Basic Information</h6>
         <dl class="row">
           <dt class="col-sm-4">ID</dt>
           <dd class="col-sm-8">${record.ID || 'N/A'}</dd>
@@ -535,7 +760,7 @@ function showDetailsModal(id) {
         </dl>
       </div>
       <div class="col-md-6">
-        <h6>Additional Details</h6>
+        <h6 class="section-title">Additional Details</h6>
         <dl class="row">
           ${Object.entries(record)
             .filter(([key]) => !['ID', 'District', 'Mandal', 'Secretariat', 'timestamp'].includes(key))
@@ -546,17 +771,86 @@ function showDetailsModal(id) {
         </dl>
       </div>
     </div>
+    <div class="row mt-3">
+      <div class="col-12">
+        <h6 class="section-title">Timeline</h6>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-point"></div>
+            <div class="timeline-content">
+              <h6>Application Submitted</h6>
+              <p>${new Date(record.timestamp).toLocaleString()}</p>
+            </div>
+          </div>
+          <!-- Additional timeline items would go here -->
+        </div>
+      </div>
+    </div>
   `;
   
   const modal = new bootstrap.Modal(document.getElementById('detailModal'));
   modal.show();
 }
 
+// Show fullscreen chart
+function showFullscreenChart() {
+  if (!mainChart) return;
+  
+  // Set modal title based on current chart type
+  let title = '';
+  switch (currentChartType) {
+    case 'pie': title = 'Pie Chart'; break;
+    case 'doughnut': title = 'Doughnut Chart'; break;
+    case 'polarArea': title = 'Polar Area Chart'; break;
+    case 'line': title = 'Line Chart'; break;
+    default: title = 'Bar Chart';
+  }
+  
+  document.getElementById('fullscreenChartTitle').textContent = title;
+  
+  // Create a copy of the chart in the modal
+  const canvas = document.getElementById('fullscreenChartCanvas');
+  const ctx = canvas.getContext('2d');
+  
+  if (fullscreenChart) fullscreenChart.destroy();
+  
+  fullscreenChart = new Chart(ctx, {
+    type: mainChart.config.type,
+    data: JSON.parse(JSON.stringify(mainChart.config.data)),
+    options: JSON.parse(JSON.stringify(mainChart.config.options))
+  });
+  
+  // Adjust options for fullscreen
+  fullscreenChart.options.maintainAspectRatio = false;
+  fullscreenChart.options.plugins.legend.position = 'top';
+  fullscreenChart.update();
+  
+  // Show modal
+  const modal = new bootstrap.Modal(document.getElementById('fullscreenChartModal'));
+  modal.show();
+}
+
+// Download chart as image
+function downloadChart() {
+  if (!fullscreenChart) return;
+  
+  const link = document.createElement('a');
+  link.download = `chart-${new Date().toISOString().slice(0,10)}.png`;
+  link.href = document.getElementById('fullscreenChartCanvas').toDataURL('image/png');
+  link.click();
+}
+
+// Print details
+function printDetails() {
+  window.print();
+}
+
 // Main dashboard update function
 function updateDashboard() {
   const filtered = filterData();
   
-  updateChart(filtered);
+  updateMainChart(filtered);
+  updateTrendChart();
   updateMetrics(filtered);
   updateRecentTable(filtered);
   
@@ -565,4 +859,8 @@ function updateDashboard() {
 }
 
 // Initialize the dashboard when DOM is loaded
-document.addEventListener('DOMContentLoaded', initDashboard);
+document.addEventListener('DOMContentLoaded', function() {
+  // Check for saved theme preference
+  if (localStorage.getItem("theme") === "dark" || 
+      (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add("dark-mode");
