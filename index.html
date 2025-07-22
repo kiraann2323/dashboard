@@ -1,269 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Advanced Google Sheet Dashboard</title>
-
-  <!-- PapaParse for CSV parsing -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
-  <!-- Chart.js for charts -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.1/papaparse.min.js"></script>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 20px;
-      background: #f0f2f5;
-      color: #333;
-    }
-    .container {
-      max-width: 900px;
-      margin: auto;
-      background: white;
-      padding: 20px 30px;
-      border-radius: 8px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.1);
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 25px;
-    }
-    label {
-      display: inline-block;
-      margin: 10px 15px 20px 0;
-      font-weight: 600;
-      color: #555;
-    }
-    select {
-      padding: 5px 10px;
-      font-size: 1rem;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      min-width: 180px;
-      cursor: pointer;
-    }
-    #summary {
-      margin: 15px 0 30px;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #444;
-      text-align: center;
-    }
-    canvas {
-      max-width: 100%;
-      height: 400px !important;
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
+    h2 { margin-top: 40px; }
+    select, input[type="date"] { padding: 5px; margin: 5px; }
+    #summary { margin: 20px 0; font-weight: bold; }
+    canvas { max-width: 100%; margin: 30px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 5px; text-align: left; }
+    th { background-color: #eee; }
+    #controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Advanced Application Dashboard</h1>
 
-    <div>
-      <label for="districtFilter">District:
-        <select id="districtFilter">
-          <option value="">All</option>
-        </select>
-      </label>
+<h1>📊 Secretariat Services Dashboard</h1>
 
-      <label for="mandalFilter">Mandal:
-        <select id="mandalFilter" disabled>
-          <option value="">All</option>
-        </select>
-      </label>
+<div id="controls">
+  <label>District:
+    <select id="districtFilter"></select>
+  </label>
+  <label>Mandal:
+    <select id="mandalFilter"></select>
+  </label>
+  <label>Secretariat:
+    <select id="secretariatFilter"></select>
+  </label>
+  <label>Status:
+    <select id="statusFilter"></select>
+  </label>
+  <label>From Date:
+    <input type="date" id="fromDate">
+  </label>
+  <label>To Date:
+    <input type="date" id="toDate">
+  </label>
+  <button onclick="resetFilters()">Reset Filters</button>
+</div>
 
-      <label for="secretariatFilter">Secretariat:
-        <select id="secretariatFilter" disabled>
-          <option value="">All</option>
-        </select>
-      </label>
-    </div>
+<div id="summary">Loading summary...</div>
 
-    <div id="summary">Loading data...</div>
+<canvas id="statusChart"></canvas>
+<canvas id="mandalChart"></canvas>
 
-    <canvas id="chart"></canvas>
-  </div>
+<h2>📋 Application Table</h2>
+<button onclick="exportTableToCSV()">Export CSV</button>
+<table id="dataTable">
+  <thead></thead>
+  <tbody></tbody>
+</table>
 
-  <script>
-    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSE1BJj7v8U_RGXkX69arUql0J4SBlA5xyxW7uv17QeNmbuUmbpMtN8ZRTk8SFbdTpEFmzPWbgt_E1/pub?gid=0&single=true&output=csv";
+<script>
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSE1BJj7v8U_RGXkX69arUql0J4SBlA5xyxW7uv17QeNmbuUmbpMtN8ZRTk8SF/pub?output=csv';
 
-    let rawData = [];
-    let filteredData = [];
-    let chart = null;
+let rawData = [];
+let filteredData = [];
 
-    // Utility: Get unique values from data for a given key, sorted
-    function getUniqueSortedValues(data, key) {
-      return [...new Set(data.map(item => item[key]).filter(Boolean))].sort((a,b) => a.localeCompare(b));
-    }
-
-    // Populate dropdown options with unique values
-    function populateDropdown(id, values, enable = true) {
-      const select = document.getElementById(id);
-      select.innerHTML = '<option value="">All</option>'; // Reset options
-      values.forEach(val => {
-        const option = document.createElement('option');
-        option.value = val;
-        option.textContent = val;
-        select.appendChild(option);
-      });
-      select.disabled = !enable || values.length === 0;
-    }
-
-    // Filter data based on current dropdown selections
-    function filterData() {
-      const district = document.getElementById('districtFilter').value;
-      const mandal = document.getElementById('mandalFilter').value;
-      const secretariat = document.getElementById('secretariatFilter').value;
-
-      return rawData.filter(row => {
-        return (!district || row.District === district) &&
-               (!mandal || row.Mandal === mandal) &&
-               (!secretariat || row.Secretariat === secretariat);
-      });
-    }
-
-    // Group data by key and count occurrences
-    function groupByCount(data, key) {
-      return data.reduce((acc, row) => {
-        const val = row[key] || 'Unknown';
-        acc[val] = (acc[val] || 0) + 1;
-        return acc;
-      }, {});
-    }
-
-    // Update summary text
-    function updateSummary(data) {
-      const summaryDiv = document.getElementById('summary');
-      summaryDiv.textContent = `Total Applications: ${data.length}`;
-    }
-
-    // Update chart visualization
-    function updateChart(data) {
-      // Group by Mandal for chart display
-      const groupKey = 'Mandal';
-      const grouped = groupByCount(data, groupKey);
-      const labels = Object.keys(grouped);
-      const counts = Object.values(grouped);
-
-      if(chart) {
-        chart.destroy();
+fetch(SHEET_CSV_URL)
+  .then(res => res.text())
+  .then(csv => {
+    Papa.parse(csv, {
+      header: true,
+      complete: (results) => {
+        rawData = results.data;
+        populateFilters();
+        applyFilters();
       }
+    });
+  });
 
-      const ctx = document.getElementById('chart').getContext('2d');
-      chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: `Applications by ${groupKey}`,
-            data: counts,
-            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1,
-            borderRadius: 5
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: true },
-            tooltip: { enabled: true }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: { display: true, text: 'Number of Applications' }
-            },
-            x: {
-              title: { display: true, text: groupKey }
-            }
-          }
-        }
-      });
-    }
+function populateFilters() {
+  populateSelect('districtFilter', getUnique('District'));
+  populateSelect('mandalFilter', getUnique('Mandal'));
+  populateSelect('secretariatFilter', getUnique('Secretariat'));
+  populateSelect('statusFilter', getUnique('Status'));
+}
 
-    // When District changes, update Mandal and Secretariat dropdowns accordingly
-    function onDistrictChange() {
-      const district = document.getElementById('districtFilter').value;
+function populateSelect(id, items) {
+  const select = document.getElementById(id);
+  select.innerHTML = '<option value="">All</option>' + items.map(v => `<option>${v}</option>`).join('');
+}
 
-      // Filter raw data by district
-      let filteredByDistrict = district ? rawData.filter(r => r.District === district) : rawData;
+function getUnique(field) {
+  return [...new Set(rawData.map(row => row[field]).filter(Boolean))];
+}
 
-      // Populate Mandal dropdown with relevant mandals
-      const mandals = getUniqueSortedValues(filteredByDistrict, 'Mandal');
-      populateDropdown('mandalFilter', mandals, mandals.length > 0);
+function applyFilters() {
+  const district = document.getElementById('districtFilter').value;
+  const mandal = document.getElementById('mandalFilter').value;
+  const sec = document.getElementById('secretariatFilter').value;
+  const status = document.getElementById('statusFilter').value;
+  const fromDate = document.getElementById('fromDate').value;
+  const toDate = document.getElementById('toDate').value;
 
-      // Populate Secretariat dropdown with relevant secretariats (based on district only)
-      const secretariats = getUniqueSortedValues(filteredByDistrict, 'Secretariat');
-      populateDropdown('secretariatFilter', secretariats, secretariats.length > 0);
+  filteredData = rawData.filter(row => {
+    if (district && row.District !== district) return false;
+    if (mandal && row.Mandal !== mandal) return false;
+    if (sec && row.Secretariat !== sec) return false;
+    if (status && row.Status !== status) return false;
+    if (fromDate && row['Raised Date'] < fromDate) return false;
+    if (toDate && row['Raised Date'] > toDate) return false;
+    return true;
+  });
 
-      // Reset mandal and secretariat selections
-      document.getElementById('mandalFilter').value = '';
-      document.getElementById('secretariatFilter').value = '';
+  updateSummary();
+  drawCharts();
+  populateTable();
+}
 
-      updateDashboard();
-    }
+function updateSummary() {
+  const total = filteredData.length;
+  const pending = filteredData.filter(r => r.Status === 'Pending').length;
+  const avgSLA = Math.round(filteredData.reduce((a, b) => a + Number(b['SLA Days'] || 0), 0) / total || 0);
+  document.getElementById('summary').textContent = `Total: ${total} | Pending: ${pending} | Avg SLA Days: ${avgSLA}`;
+}
 
-    // When Mandal changes, update Secretariat dropdown accordingly
-    function onMandalChange() {
-      const district = document.getElementById('districtFilter').value;
-      const mandal = document.getElementById('mandalFilter').value;
+function drawCharts() {
+  const statusCount = countBy(filteredData, 'Status');
+  const mandalCount = countBy(filteredData, 'Mandal');
 
-      // Filter data by district & mandal
-      let filteredByMandal = rawData;
-      if(district) filteredByMandal = filteredByMandal.filter(r => r.District === district);
-      if(mandal) filteredByMandal = filteredByMandal.filter(r => r.Mandal === mandal);
+  drawChart('statusChart', 'Status Breakdown', Object.keys(statusCount), Object.values(statusCount));
+  drawChart('mandalChart', 'Applications per Mandal', Object.keys(mandalCount), Object.values(mandalCount));
+}
 
-      // Update Secretariat dropdown based on filtered data
-      const secretariats = getUniqueSortedValues(filteredByMandal, 'Secretariat');
-      populateDropdown('secretariatFilter', secretariats, secretariats.length > 0);
+function drawChart(canvasId, title, labels, data) {
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  if (window[canvasId]) window[canvasId].destroy();
+  window[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ label: title, data, backgroundColor: 'steelblue' }] },
+    options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: title } } }
+  });
+}
 
-      // Reset secretariat selection
-      document.getElementById('secretariatFilter').value = '';
+function countBy(data, field) {
+  return data.reduce((acc, row) => {
+    acc[row[field]] = (acc[row[field]] || 0) + 1;
+    return acc;
+  }, {});
+}
 
-      updateDashboard();
-    }
+function populateTable() {
+  const table = document.getElementById('dataTable');
+  const fields = Object.keys(filteredData[0] || {});
+  table.querySelector('thead').innerHTML = '<tr>' + fields.map(f => `<th>${f}</th>`).join('') + '</tr>';
+  table.querySelector('tbody').innerHTML = filteredData.map(row => '<tr>' + fields.map(f => `<td>${row[f]}</td>`).join('') + '</tr>').join('');
+}
 
-    // When Secretariat changes, just update dashboard
-    function onSecretariatChange() {
-      updateDashboard();
-    }
+function resetFilters() {
+  document.querySelectorAll('#controls select, #controls input').forEach(el => el.value = '');
+  applyFilters();
+}
 
-    // Update dashboard summary and chart
-    function updateDashboard() {
-      filteredData = filterData();
-      updateSummary(filteredData);
-      updateChart(filteredData);
-    }
+function exportTableToCSV() {
+  const csv = Papa.unparse(filteredData);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'dashboard_data.csv';
+  link.click();
+}
 
-    // Initial load and setup
-    fetch(SHEET_URL)
-      .then(response => response.text())
-      .then(csvText => {
-        const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-        rawData = parsed.data;
+// Re-filter on change
+['districtFilter','mandalFilter','secretariatFilter','statusFilter','fromDate','toDate']
+  .forEach(id => document.getElementById(id).addEventListener('change', applyFilters));
+</script>
 
-        // Populate district dropdown on load
-        const districts = getUniqueSortedValues(rawData, 'District');
-        populateDropdown('districtFilter', districts, districts.length > 0);
-
-        // Initially disable mandal and secretariat filters until district selected
-        document.getElementById('mandalFilter').disabled = true;
-        document.getElementById('secretariatFilter').disabled = true;
-
-        updateSummary(rawData);
-        updateChart(rawData);
-      })
-      .catch(err => {
-        document.getElementById('summary').textContent = 'Error loading data';
-        console.error('Error fetching/parsing data:', err);
-      });
-
-    // Event listeners for dropdowns
-    document.getElementById('districtFilter').addEventListener('change', onDistrictChange);
-    document.getElementById('mandalFilter').addEventListener('change', onMandalChange);
-    document.getElementById('secretariatFilter').addEventListener('change', onSecretariatChange);
-  </script>
 </body>
 </html>
