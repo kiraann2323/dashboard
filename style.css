@@ -1,102 +1,65 @@
 body {
+  background-color: #f8f9fa;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f8f9fc;
-  margin: 0;
-  padding: 20px;
 }
 
-header h1 {
-  text-align: center;
-  color: #333;
-  margin-bottom: 20px;
+.card {
+  border: none;
+  border-radius: 10px;
+  transition: transform 0.2s;
 }
 
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.filters label {
-  display: flex;
-  flex-direction: column;
-  font-weight: bold;
-  color: #444;
-}
-
-.filters select {
-  padding: 6px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-#searchInput {
-  margin: 10px auto;
-  display: block;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #aaa;
-  width: 60%;
-  max-width: 400px;
-}
-
-.charts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-  margin-bottom: 20px;
+.card:hover {
+  transform: translateY(-2px);
 }
 
 .chart-container {
-  width: 300px;
+  position: relative;
   height: 300px;
-  background: #fff;
-  padding: 10px;
-  border-radius: 12px;
-  box-shadow: 0 0 8px rgba(0,0,0,0.1);
 }
 
-#summaryBox {
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 18px;
-  color: #333;
-}
-
-#dataTable {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
+.metric-card {
+  padding: 15px;
   border-radius: 8px;
-  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-#dataTable thead {
-  background-color: #4e73df;
-  color: #fff;
+.metric-value {
+  font-size: 24px;
+  font-weight: bold;
 }
 
-#dataTable th, #dataTable td {
-  padding: 10px;
-  border: 1px solid #ddd;
+.metric-label {
   font-size: 14px;
+  opacity: 0.9;
 }
 
-#exportBtn {
-  display: block;
-  margin: 0 auto 20px auto;
-  background: #1cc88a;
-  color: #fff;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
+#recentTable tbody tr {
   cursor: pointer;
-  font-size: 16px;
 }
 
-#exportBtn:hover {
-  background-color: #17a673;
+#recentTable tbody tr:hover {
+  background-color: rgba(0,0,0,0.03);
+}
+
+/* Animation for data refresh */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.refreshing {
+  animation: pulse 1.5s infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .chart-container {
+    height: 250px;
+  }
+  
+  .metric-value {
+    font-size: 20px;
+  }
 }
