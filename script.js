@@ -4,7 +4,7 @@
 <canvas id="myChart" width="600" height="400"></canvas>
 
 <script>
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSE1BJj7v8U_RGXkX69arUql0J4SBlA5xyxW7uv17QeNmbuUmbpMtN8ZRTk8SFbdTpEFmzPWbgt_E1/pub?gid=0&single=true&output=csv";
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/1onbXUKMf_BMG3QY_1THkNe8a0JB8zuFC1_eHK3fXAn0/edit?usp=sharing";
 
 fetch(SHEET_URL)
   .then(response => response.text())
