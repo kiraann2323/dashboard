@@ -1,18 +1,125 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Google Sheet Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    select { margin-right: 10px; }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>📊 Google Sheets Dashboard</h1>
-    <canvas id="myChart"></canvas>
-  </div>
-  <script src="script.js"></script>
+
+<h2>Application Dashboard</h2>
+
+<label>District:
+  <select id="districtFilter">
+    <option value="">All</option>
+  </select>
+</label>
+
+<label>Mandal:
+  <select id="mandalFilter">
+    <option value="">All</option>
+  </select>
+</label>
+
+<canvas id="chart" width="800" height="400"></canvas>
+
+<script>
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSE1BJj7v8U_RGXkX69arUql0J4SBlA5xyxW7uv17QeNmbuUmbpMtN8ZRTk8SFbdTpEFmzPWbgt_E1/pub?gid=0&single=true&output=csv";
+
+let rawData = [];
+let chart = null;
+
+function populateDropdown(id, values) {
+  const select = document.getElementById(id);
+  // Clear except first option
+  select.length = 1;
+  values.forEach(val => {
+    const option = document.createElement("option");
+    option.value = val;
+    option.textContent = val;
+    select.appendChild(option);
+  });
+}
+
+function groupBy(data, key) {
+  return data.reduce((acc, item) => {
+    const k = item[key] || "Unknown";
+    acc[k] = (acc[k] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function filterData() {
+  const district = document.getElementById("districtFilter").value;
+  const mandal = document.getElementById("mandalFilter").value;
+
+  return rawData.filter(row => {
+    return (district === "" || row.District === district)
+      && (mandal === "" || row.Mandal === mandal);
+  });
+}
+
+function updateChart(data) {
+  const grouped = groupBy(data, "Mandal");
+  const labels = Object.keys(grouped);
+  const counts = Object.values(grouped);
+
+  if(chart) {
+    chart.destroy();
+  }
+
+  const ctx = document.getElementById("chart").getContext("2d");
+  chart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Applications by Mandal",
+        data: counts,
+        backgroundColor: "#4CAF50"
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+fetch(SHEET_URL)
+  .then(response => response.text())
+  .then(csvText => {
+    const parsed = Papa.parse(csvText, { header: true });
+    rawData = parsed.data;
+
+    // Populate district filter dropdown
+    const districts = [...new Set(rawData.map(r => r.District).filter(Boolean))];
+    populateDropdown("districtFilter", districts);
+
+    // Populate mandal filter dropdown
+    const mandals = [...new Set(rawData.map(r => r.Mandal).filter(Boolean))];
+    populateDropdown("mandalFilter", mandals);
+
+    updateChart(rawData);
+  });
+
+// Update mandal options based on selected district
+document.getElementById("districtFilter").addEventListener("change", () => {
+  const district = document.getElementById("districtFilter").value;
+  const filteredMandals = [...new Set(rawData.filter(r => !district || r.District === district).map(r => r.Mandal).filter(Boolean))];
+  populateDropdown("mandalFilter", filteredMandals);
+
+  updateChart(filterData());
+});
+
+document.getElementById("mandalFilter").addEventListener("change", () => {
+  updateChart(filterData());
+});
+</script>
+
 </body>
 </html>
-
