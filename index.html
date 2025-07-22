@@ -1,40 +1,56 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Advanced Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>📊 Grievance Dashboard</h1>
+  <div class="container">
+    <h1>📊 Advanced Dashboard</h1>
 
-        <div class="filters">
-            <select id="districtFilter"><option value="">All Districts</option></select>
-            <select id="mandalFilter"><option value="">All Mandals</option></select>
-            <select id="secretariatFilter"><option value="">All Secretariats</option></select>
-            <select id="statusFilter"><option value="">All Status</option></select>
-            <button onclick="resetFilters()">Reset Filters</button>
-        </div>
-
-        <div class="summary" id="summary"></div>
-
-        <canvas id="barChart"></canvas>
-        <canvas id="lineChart"></canvas>
-        <canvas id="pieChart"></canvas>
-
-        <input type="text" id="searchInput" placeholder="Search by Application No...">
-        <button onclick="exportTableToCSV()">Export CSV</button>
-
-        <table id="dataTable">
-            <thead></thead>
-            <tbody></tbody>
-        </table>
+    <div class="filters">
+      <select id="districtFilter"><option value="">All Districts</option></select>
+      <select id="mandalFilter"><option value="">All Mandals</option></select>
+      <select id="secretariatFilter"><option value="">All Secretariats</option></select>
+      <select id="statusFilter"><option value="">All Status</option></select>
     </div>
 
-    <script src="script.js"></script>
+    <div class="summary">
+      <div>Total Applications: <span id="totalCount">0</span></div>
+      <div>Pending: <span id="pendingCount">0</span></div>
+      <div>Avg SLA Days: <span id="avgSLA">0</span></div>
+    </div>
+
+    <div class="charts">
+      <canvas id="barChart"></canvas>
+      <canvas id="pieChart"></canvas>
+      <canvas id="lineChart"></canvas>
+    </div>
+
+    <div class="table-section">
+      <button id="exportBtn">⬇️ Export CSV</button>
+      <input type="text" id="searchInput" placeholder="Search Application No...">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>Application No</th>
+            <th>District</th>
+            <th>Mandal</th>
+            <th>Secretariat</th>
+            <th>Status</th>
+            <th>Department</th>
+            <th>SLA Days</th>
+            <th>Raised Date</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
