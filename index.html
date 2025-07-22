@@ -1,125 +1,269 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Google Sheet Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Advanced Google Sheet Dashboard</title>
+
+  <!-- PapaParse for CSV parsing -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  <!-- Chart.js for charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    select { margin-right: 10px; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 20px;
+      background: #f0f2f5;
+      color: #333;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 20px 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    label {
+      display: inline-block;
+      margin: 10px 15px 20px 0;
+      font-weight: 600;
+      color: #555;
+    }
+    select {
+      padding: 5px 10px;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      min-width: 180px;
+      cursor: pointer;
+    }
+    #summary {
+      margin: 15px 0 30px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #444;
+      text-align: center;
+    }
+    canvas {
+      max-width: 100%;
+      height: 400px !important;
+    }
   </style>
 </head>
 <body>
+  <div class="container">
+    <h1>Advanced Application Dashboard</h1>
 
-<h2>Application Dashboard</h2>
+    <div>
+      <label for="districtFilter">District:
+        <select id="districtFilter">
+          <option value="">All</option>
+        </select>
+      </label>
 
-<label>District:
-  <select id="districtFilter">
-    <option value="">All</option>
-  </select>
-</label>
+      <label for="mandalFilter">Mandal:
+        <select id="mandalFilter" disabled>
+          <option value="">All</option>
+        </select>
+      </label>
 
-<label>Mandal:
-  <select id="mandalFilter">
-    <option value="">All</option>
-  </select>
-</label>
+      <label for="secretariatFilter">Secretariat:
+        <select id="secretariatFilter" disabled>
+          <option value="">All</option>
+        </select>
+      </label>
+    </div>
 
-<canvas id="chart" width="800" height="400"></canvas>
+    <div id="summary">Loading data...</div>
 
-<script>
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSE1BJj7v8U_RGXkX69arUql0J4SBlA5xyxW7uv17QeNmbuUmbpMtN8ZRTk8SFbdTpEFmzPWbgt_E1/pub?gid=0&single=true&output=csv";
+    <canvas id="chart"></canvas>
+  </div>
 
-let rawData = [];
-let chart = null;
+  <script>
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSE1BJj7v8U_RGXkX69arUql0J4SBlA5xyxW7uv17QeNmbuUmbpMtN8ZRTk8SFbdTpEFmzPWbgt_E1/pub?gid=0&single=true&output=csv";
 
-function populateDropdown(id, values) {
-  const select = document.getElementById(id);
-  // Clear except first option
-  select.length = 1;
-  values.forEach(val => {
-    const option = document.createElement("option");
-    option.value = val;
-    option.textContent = val;
-    select.appendChild(option);
-  });
-}
+    let rawData = [];
+    let filteredData = [];
+    let chart = null;
 
-function groupBy(data, key) {
-  return data.reduce((acc, item) => {
-    const k = item[key] || "Unknown";
-    acc[k] = (acc[k] || 0) + 1;
-    return acc;
-  }, {});
-}
-
-function filterData() {
-  const district = document.getElementById("districtFilter").value;
-  const mandal = document.getElementById("mandalFilter").value;
-
-  return rawData.filter(row => {
-    return (district === "" || row.District === district)
-      && (mandal === "" || row.Mandal === mandal);
-  });
-}
-
-function updateChart(data) {
-  const grouped = groupBy(data, "Mandal");
-  const labels = Object.keys(grouped);
-  const counts = Object.values(grouped);
-
-  if(chart) {
-    chart.destroy();
-  }
-
-  const ctx = document.getElementById("chart").getContext("2d");
-  chart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: labels,
-      datasets: [{
-        label: "Applications by Mandal",
-        data: counts,
-        backgroundColor: "#4CAF50"
-      }]
-    },
-    options: {
-      responsive: true,
-      scales: { y: { beginAtZero: true } }
+    // Utility: Get unique values from data for a given key, sorted
+    function getUniqueSortedValues(data, key) {
+      return [...new Set(data.map(item => item[key]).filter(Boolean))].sort((a,b) => a.localeCompare(b));
     }
-  });
-}
 
-fetch(SHEET_URL)
-  .then(response => response.text())
-  .then(csvText => {
-    const parsed = Papa.parse(csvText, { header: true });
-    rawData = parsed.data;
+    // Populate dropdown options with unique values
+    function populateDropdown(id, values, enable = true) {
+      const select = document.getElementById(id);
+      select.innerHTML = '<option value="">All</option>'; // Reset options
+      values.forEach(val => {
+        const option = document.createElement('option');
+        option.value = val;
+        option.textContent = val;
+        select.appendChild(option);
+      });
+      select.disabled = !enable || values.length === 0;
+    }
 
-    // Populate district filter dropdown
-    const districts = [...new Set(rawData.map(r => r.District).filter(Boolean))];
-    populateDropdown("districtFilter", districts);
+    // Filter data based on current dropdown selections
+    function filterData() {
+      const district = document.getElementById('districtFilter').value;
+      const mandal = document.getElementById('mandalFilter').value;
+      const secretariat = document.getElementById('secretariatFilter').value;
 
-    // Populate mandal filter dropdown
-    const mandals = [...new Set(rawData.map(r => r.Mandal).filter(Boolean))];
-    populateDropdown("mandalFilter", mandals);
+      return rawData.filter(row => {
+        return (!district || row.District === district) &&
+               (!mandal || row.Mandal === mandal) &&
+               (!secretariat || row.Secretariat === secretariat);
+      });
+    }
 
-    updateChart(rawData);
-  });
+    // Group data by key and count occurrences
+    function groupByCount(data, key) {
+      return data.reduce((acc, row) => {
+        const val = row[key] || 'Unknown';
+        acc[val] = (acc[val] || 0) + 1;
+        return acc;
+      }, {});
+    }
 
-// Update mandal options based on selected district
-document.getElementById("districtFilter").addEventListener("change", () => {
-  const district = document.getElementById("districtFilter").value;
-  const filteredMandals = [...new Set(rawData.filter(r => !district || r.District === district).map(r => r.Mandal).filter(Boolean))];
-  populateDropdown("mandalFilter", filteredMandals);
+    // Update summary text
+    function updateSummary(data) {
+      const summaryDiv = document.getElementById('summary');
+      summaryDiv.textContent = `Total Applications: ${data.length}`;
+    }
 
-  updateChart(filterData());
-});
+    // Update chart visualization
+    function updateChart(data) {
+      // Group by Mandal for chart display
+      const groupKey = 'Mandal';
+      const grouped = groupByCount(data, groupKey);
+      const labels = Object.keys(grouped);
+      const counts = Object.values(grouped);
 
-document.getElementById("mandalFilter").addEventListener("change", () => {
-  updateChart(filterData());
-});
-</script>
+      if(chart) {
+        chart.destroy();
+      }
 
+      const ctx = document.getElementById('chart').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: `Applications by ${groupKey}`,
+            data: counts,
+            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1,
+            borderRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: true },
+            tooltip: { enabled: true }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'Number of Applications' }
+            },
+            x: {
+              title: { display: true, text: groupKey }
+            }
+          }
+        }
+      });
+    }
+
+    // When District changes, update Mandal and Secretariat dropdowns accordingly
+    function onDistrictChange() {
+      const district = document.getElementById('districtFilter').value;
+
+      // Filter raw data by district
+      let filteredByDistrict = district ? rawData.filter(r => r.District === district) : rawData;
+
+      // Populate Mandal dropdown with relevant mandals
+      const mandals = getUniqueSortedValues(filteredByDistrict, 'Mandal');
+      populateDropdown('mandalFilter', mandals, mandals.length > 0);
+
+      // Populate Secretariat dropdown with relevant secretariats (based on district only)
+      const secretariats = getUniqueSortedValues(filteredByDistrict, 'Secretariat');
+      populateDropdown('secretariatFilter', secretariats, secretariats.length > 0);
+
+      // Reset mandal and secretariat selections
+      document.getElementById('mandalFilter').value = '';
+      document.getElementById('secretariatFilter').value = '';
+
+      updateDashboard();
+    }
+
+    // When Mandal changes, update Secretariat dropdown accordingly
+    function onMandalChange() {
+      const district = document.getElementById('districtFilter').value;
+      const mandal = document.getElementById('mandalFilter').value;
+
+      // Filter data by district & mandal
+      let filteredByMandal = rawData;
+      if(district) filteredByMandal = filteredByMandal.filter(r => r.District === district);
+      if(mandal) filteredByMandal = filteredByMandal.filter(r => r.Mandal === mandal);
+
+      // Update Secretariat dropdown based on filtered data
+      const secretariats = getUniqueSortedValues(filteredByMandal, 'Secretariat');
+      populateDropdown('secretariatFilter', secretariats, secretariats.length > 0);
+
+      // Reset secretariat selection
+      document.getElementById('secretariatFilter').value = '';
+
+      updateDashboard();
+    }
+
+    // When Secretariat changes, just update dashboard
+    function onSecretariatChange() {
+      updateDashboard();
+    }
+
+    // Update dashboard summary and chart
+    function updateDashboard() {
+      filteredData = filterData();
+      updateSummary(filteredData);
+      updateChart(filteredData);
+    }
+
+    // Initial load and setup
+    fetch(SHEET_URL)
+      .then(response => response.text())
+      .then(csvText => {
+        const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+        rawData = parsed.data;
+
+        // Populate district dropdown on load
+        const districts = getUniqueSortedValues(rawData, 'District');
+        populateDropdown('districtFilter', districts, districts.length > 0);
+
+        // Initially disable mandal and secretariat filters until district selected
+        document.getElementById('mandalFilter').disabled = true;
+        document.getElementById('secretariatFilter').disabled = true;
+
+        updateSummary(rawData);
+        updateChart(rawData);
+      })
+      .catch(err => {
+        document.getElementById('summary').textContent = 'Error loading data';
+        console.error('Error fetching/parsing data:', err);
+      });
+
+    // Event listeners for dropdowns
+    document.getElementById('districtFilter').addEventListener('change', onDistrictChange);
+    document.getElementById('mandalFilter').addEventListener('change', onMandalChange);
+    document.getElementById('secretariatFilter').addEventListener('change', onSecretariatChange);
+  </script>
 </body>
 </html>
