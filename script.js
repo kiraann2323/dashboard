@@ -1,5 +1,5 @@
 **script.js**
-```javascript
+    javascript
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSE1BJj7v8U_RGXkX69arUql0J4SBlA5xyxW7uv17QeNmbuUmbpMtN8ZRTk8SF/pub?output=csv";
 
 let rawData = [];
@@ -124,4 +124,4 @@ document.getElementById("searchInput").addEventListener("keyup", function () {
 });
 
 fetchData();
-```
+
