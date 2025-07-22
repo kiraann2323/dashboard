@@ -1,87 +1,102 @@
 body {
-  font-family: Arial, sans-serif;
-  background: #f4f7fc;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f8f9fc;
   margin: 0;
-  padding: 1rem;
+  padding: 20px;
 }
 
-.container {
-  max-width: 1200px;
-  margin: auto;
-}
-
-h1 {
+header h1 {
   text-align: center;
   color: #333;
+  margin-bottom: 20px;
 }
 
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 15px;
   justify-content: center;
+  margin-bottom: 20px;
+}
+
+.filters label {
+  display: flex;
+  flex-direction: column;
+  font-weight: bold;
+  color: #444;
 }
 
 .filters select {
-  padding: 0.5rem;
-  font-size: 1rem;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
 }
 
-.summary {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 1rem;
-  font-weight: bold;
+#searchInput {
+  margin: 10px auto;
+  display: block;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #aaa;
+  width: 60%;
+  max-width: 400px;
 }
 
 .charts {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 20px;
   justify-content: center;
-  margin-bottom: 1rem;
+  margin-bottom: 20px;
 }
 
-canvas {
-  background: white;
-  padding: 1rem;
-  border-radius: 8px;
-  box-shadow: 0 0 5px #ccc;
-  max-width: 350px;
+.chart-container {
+  width: 300px;
+  height: 300px;
+  background: #fff;
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
 }
 
-.table-section {
-  margin-top: 2rem;
-}
-
-#searchInput {
-  margin-bottom: 0.5rem;
-  padding: 0.5rem;
-  width: 100%;
-  max-width: 300px;
+#summaryBox {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 18px;
+  color: #333;
 }
 
 #dataTable {
   width: 100%;
   border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#dataTable thead {
+  background-color: #4e73df;
+  color: #fff;
 }
 
 #dataTable th, #dataTable td {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  text-align: left;
-}
-
-#dataTable th {
-  background-color: #eee;
+  padding: 10px;
+  border: 1px solid #ddd;
+  font-size: 14px;
 }
 
 #exportBtn {
-  padding: 0.5rem 1rem;
-  margin-bottom: 0.5rem;
-  background-color: #007bff;
-  color: white;
+  display: block;
+  margin: 0 auto 20px auto;
+  background: #1cc88a;
+  color: #fff;
   border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 16px;
+}
+
+#exportBtn:hover {
+  background-color: #17a673;
 }
