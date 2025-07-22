@@ -1,115 +1,127 @@
-<script>
-const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSE1BJj7v8U_RGXkX69arUql0J4SBlA5xyxW7uv17QeNmbuUmbpMtN8ZRTk8SF/pub?output=csv';
+**script.js**
+```javascript
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSE1BJj7v8U_RGXkX69arUql0J4SBlA5xyxW7uv17QeNmbuUmbpMtN8ZRTk8SF/pub?output=csv";
 
 let rawData = [];
-let filteredData = [];
 
-fetch(SHEET_CSV_URL)
-  .then(res => res.text())
-  .then(csv => {
-    Papa.parse(csv, {
-      header: true,
-      complete: (results) => {
-        rawData = results.data;
-        populateFilters();
-        applyFilters();
-      }
-    });
-  });
+async function fetchData() {
+    const response = await fetch(SHEET_URL);
+    const data = await response.text();
+    const rows = data.split("\n").map(r => r.split(","));
+    const headers = rows[0];
+    rawData = rows.slice(1).map(row => Object.fromEntries(row.map((val, i) => [headers[i], val])));
+    populateFilters();
+    renderAll();
+}
 
 function populateFilters() {
-  populateSelect('districtFilter', getUnique('District'));
-  populateSelect('mandalFilter', getUnique('Mandal'));
-  populateSelect('secretariatFilter', getUnique('Secretariat'));
-  populateSelect('statusFilter', getUnique('Status'));
+    populateDropdown("districtFilter", [...new Set(rawData.map(r => r["District"]))]);
+    populateDropdown("mandalFilter", [...new Set(rawData.map(r => r["Mandal"]))]);
+    populateDropdown("secretariatFilter", [...new Set(rawData.map(r => r["Secretariat"]))]);
+    populateDropdown("statusFilter", [...new Set(rawData.map(r => r["Status"]))]);
 }
 
-function populateSelect(id, items) {
-  const select = document.getElementById(id);
-  select.innerHTML = '<option value="">All</option>' + items.map(v => `<option>${v}</option>`).join('');
+function populateDropdown(id, options) {
+    const dropdown = document.getElementById(id);
+    options.sort().forEach(opt => {
+        const option = document.createElement("option");
+        option.value = opt;
+        option.text = opt;
+        dropdown.appendChild(option);
+    });
 }
 
-function getUnique(field) {
-  return [...new Set(rawData.map(row => row[field]).filter(Boolean))];
+function getFilteredData() {
+    const district = document.getElementById("districtFilter").value;
+    const mandal = document.getElementById("mandalFilter").value;
+    const secretariat = document.getElementById("secretariatFilter").value;
+    const status = document.getElementById("statusFilter").value;
+    return rawData.filter(r =>
+        (!district || r["District"] === district) &&
+        (!mandal || r["Mandal"] === mandal) &&
+        (!secretariat || r["Secretariat"] === secretariat) &&
+        (!status || r["Status"] === status)
+    );
 }
 
-function applyFilters() {
-  const district = document.getElementById('districtFilter').value;
-  const mandal = document.getElementById('mandalFilter').value;
-  const sec = document.getElementById('secretariatFilter').value;
-  const status = document.getElementById('statusFilter').value;
-  const fromDate = document.getElementById('fromDate').value;
-  const toDate = document.getElementById('toDate').value;
-
-  filteredData = rawData.filter(row => {
-    if (district && row.District !== district) return false;
-    if (mandal && row.Mandal !== mandal) return false;
-    if (sec && row.Secretariat !== sec) return false;
-    if (status && row.Status !== status) return false;
-    if (fromDate && row['Raised Date'] < fromDate) return false;
-    if (toDate && row['Raised Date'] > toDate) return false;
-    return true;
-  });
-
-  updateSummary();
-  drawCharts();
-  populateTable();
+function renderAll() {
+    const data = getFilteredData();
+    renderSummary(data);
+    renderCharts(data);
+    renderTable(data);
 }
 
-function updateSummary() {
-  const total = filteredData.length;
-  const pending = filteredData.filter(r => r.Status === 'Pending').length;
-  const avgSLA = Math.round(filteredData.reduce((a, b) => a + Number(b['SLA Days'] || 0), 0) / total || 0);
-  document.getElementById('summary').textContent = `Total: ${total} | Pending: ${pending} | Avg SLA Days: ${avgSLA}`;
+function renderSummary(data) {
+    const total = data.length;
+    const pending = data.filter(r => r["Status"].includes("Pending")).length;
+    const avgSLA = Math.round(data.reduce((acc, r) => acc + (parseInt(r["SLA Days"]) || 0), 0) / total || 0);
+    document.getElementById("summary").innerText = `Total: ${total} | Pending: ${pending} | Avg SLA: ${avgSLA}`;
 }
 
-function drawCharts() {
-  const statusCount = countBy(filteredData, 'Status');
-  const mandalCount = countBy(filteredData, 'Mandal');
-
-  drawChart('statusChart', 'Status Breakdown', Object.keys(statusCount), Object.values(statusCount));
-  drawChart('mandalChart', 'Applications per Mandal', Object.keys(mandalCount), Object.values(mandalCount));
+function renderCharts(data) {
+    renderBarChart(data);
+    renderLineChart(data);
+    renderPieChart(data);
 }
 
-function drawChart(canvasId, title, labels, data) {
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  if (window[canvasId]) window[canvasId].destroy();
-  window[canvasId] = new Chart(ctx, {
-    type: 'bar',
-    data: { labels, datasets: [{ label: title, data, backgroundColor: 'steelblue' }] },
-    options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: title } } }
-  });
+function renderBarChart(data) {
+    const ctx = document.getElementById('barChart').getContext('2d');
+    const counts = countBy(data, "Mandal");
+    new Chart(ctx, { type: 'bar', data: { labels: Object.keys(counts), datasets: [{ label: "By Mandal", data: Object.values(counts), backgroundColor: "#4CAF50" }] } });
 }
 
-function countBy(data, field) {
-  return data.reduce((acc, row) => {
-    acc[row[field]] = (acc[row[field]] || 0) + 1;
-    return acc;
-  }, {});
+function renderLineChart(data) {
+    const ctx = document.getElementById('lineChart').getContext('2d');
+    const counts = countBy(data, "Raised Date");
+    const sortedKeys = Object.keys(counts).sort();
+    new Chart(ctx, { type: 'line', data: { labels: sortedKeys, datasets: [{ label: "Applications Over Time", data: sortedKeys.map(k => counts[k]), borderColor: "#2196F3", fill: false }] } });
 }
 
-function populateTable() {
-  const table = document.getElementById('dataTable');
-  const fields = Object.keys(filteredData[0] || {});
-  table.querySelector('thead').innerHTML = '<tr>' + fields.map(f => `<th>${f}</th>`).join('') + '</tr>';
-  table.querySelector('tbody').innerHTML = filteredData.map(row => '<tr>' + fields.map(f => `<td>${row[f]}</td>`).join('') + '</tr>').join('');
+function renderPieChart(data) {
+    const ctx = document.getElementById('pieChart').getContext('2d');
+    const counts = countBy(data, "Status");
+    new Chart(ctx, { type: 'pie', data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: ["#F44336", "#FFC107", "#4CAF50"] }] } });
 }
 
-function resetFilters() {
-  document.querySelectorAll('#controls select, #controls input').forEach(el => el.value = '');
-  applyFilters();
+function countBy(data, key) {
+    return data.reduce((acc, r) => {
+        acc[r[key]] = (acc[r[key]] || 0) + 1;
+        return acc;
+    }, {});
+}
+
+function renderTable(data) {
+    const table = document.getElementById("dataTable");
+    const headers = Object.keys(data[0] || {});
+    table.querySelector("thead").innerHTML = "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
+    table.querySelector("tbody").innerHTML = data.map(row => "<tr>" + headers.map(h => `<td>${row[h]}</td>`).join("") + "</tr>").join("");
 }
 
 function exportTableToCSV() {
-  const csv = Papa.unparse(filteredData);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'dashboard_data.csv';
-  link.click();
+    const rows = [...document.querySelectorAll("#dataTable tr")];
+    const csv = rows.map(row => [...row.children].map(cell => `"${cell.innerText}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "dashboard_data.csv";
+    link.click();
 }
 
-// Re-filter on change
-['districtFilter','mandalFilter','secretariatFilter','statusFilter','fromDate','toDate']
-  .forEach(id => document.getElementById(id).addEventListener('change', applyFilters));
-</script>
+function resetFilters() {
+    ["districtFilter", "mandalFilter", "secretariatFilter", "statusFilter"].forEach(id => document.getElementById(id).value = "");
+    renderAll();
+}
+
+// Re-render on filter change
+["districtFilter", "mandalFilter", "secretariatFilter", "statusFilter"].forEach(id => document.getElementById(id).addEventListener("change", renderAll));
+document.getElementById("searchInput").addEventListener("keyup", function () {
+    const value = this.value.toLowerCase();
+    const rows = document.querySelectorAll("#dataTable tbody tr");
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(value) ? "" : "none";
+    });
+});
+
+fetchData();
+```
