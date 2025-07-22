@@ -1,56 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Advanced Dashboard</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>📊 Advanced Dashboard</h1>
-
+  <div class="dashboard-container">
+    <h1>📊 Mandal & Secretariat Dashboard</h1>
     <div class="filters">
-      <select id="districtFilter"><option value="">All Districts</option></select>
-      <select id="mandalFilter"><option value="">All Mandals</option></select>
-      <select id="secretariatFilter"><option value="">All Secretariats</option></select>
-      <select id="statusFilter"><option value="">All Status</option></select>
+      <select id="districtFilter"></select>
+      <select id="mandalFilter"></select>
+      <select id="secretariatFilter"></select>
+      <select id="statusFilter"></select>
     </div>
-
-    <div class="summary">
-      <div>Total Applications: <span id="totalCount">0</span></div>
-      <div>Pending: <span id="pendingCount">0</span></div>
-      <div>Avg SLA Days: <span id="avgSLA">0</span></div>
-    </div>
-
+    <div class="summary" id="summaryBox"></div>
     <div class="charts">
       <canvas id="barChart"></canvas>
       <canvas id="pieChart"></canvas>
       <canvas id="lineChart"></canvas>
     </div>
-
     <div class="table-section">
-      <button id="exportBtn">⬇️ Export CSV</button>
-      <input type="text" id="searchInput" placeholder="Search Application No...">
+      <input type="text" id="searchInput" placeholder="Search Applications...">
+      <button onclick="exportCSV()">📁 Export CSV</button>
       <table id="dataTable">
-        <thead>
-          <tr>
-            <th>Application No</th>
-            <th>District</th>
-            <th>Mandal</th>
-            <th>Secretariat</th>
-            <th>Status</th>
-            <th>Department</th>
-            <th>SLA Days</th>
-            <th>Raised Date</th>
-          </tr>
-        </thead>
+        <thead></thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>
