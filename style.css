@@ -1,28 +1,71 @@
+**style.css**
+```css
 body {
-  font-family: 'Segoe UI', sans-serif;
-  margin: 0;
-  padding: 0;
-  background: #f9f9f9;
-  text-align: center;
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    padding: 20px;
+    color: #333;
 }
 
 .container {
-  max-width: 900px;
-  margin: auto;
-  padding: 2rem;
-  background: #fff;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  border-radius: 8px;
-  margin-top: 50px;
+    max-width: 1200px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 10px;
 }
 
 h1 {
-  margin-bottom: 2rem;
-  color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.filters select, .filters button {
+    padding: 8px;
+    font-size: 14px;
+}
+
+.summary {
+    text-align: center;
+    margin: 20px 0;
+    font-weight: bold;
+    font-size: 16px;
 }
 
 canvas {
-  max-width: 100%;
-  height: auto;
+    margin: 20px 0;
 }
 
+#searchInput {
+    display: block;
+    margin: 10px auto;
+    padding: 8px;
+    width: 60%;
+}
+
+#dataTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+#dataTable th, #dataTable td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+}
+
+#dataTable th {
+    background: #f0f0f0;
+    font-weight: bold;
+}
+```
