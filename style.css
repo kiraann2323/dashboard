@@ -1,166 +1,121 @@
-/* Add these new styles to your existing CSS */
+/* Your existing CSS remains the same */
+/* Only adding new styles for additional features */
 
-/* AI Recommendations */
-.ai-recommendations {
-  border-left: 4px solid #4e73df;
-}
-
-.ai-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  text-align: center;
-  color: #6c757d;
-}
-
-.ai-recommendation-card {
-  background: rgba(78, 115, 223, 0.1);
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-left: 3px solid #4e73df;
-  transition: all 0.3s ease;
-}
-
-.ai-recommendation-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.ai-recommendation-card h6 {
-  color: #4e73df;
-  margin-bottom: 0.5rem;
-}
-
-.ai-recommendation-card .ai-confidence {
-  font-size: 0.8rem;
-  color: #6c757d;
-}
-
-.ai-recommendation-card .ai-actions {
-  margin-top: 0.5rem;
-}
-
-/* Search Analytics */
-.search-analytics {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 1rem;
-}
-
-.search-meta {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #eee;
-}
-
-.search-stats {
-  font-weight: bold;
-  color: #4e73df;
-}
-
-.search-time {
-  font-size: 0.8rem;
-  color: #6c757d;
-}
-
-/* Enhanced Search Results */
-.search-result-item {
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-  transition: all 0.3s ease;
-}
-
-.search-result-item:hover {
-  background-color: rgba(78, 115, 223, 0.05);
-}
-
-.search-result-highlight {
-  background-color: #fff9c4;
-  padding: 0 2px;
-  border-radius: 3px;
-}
-
-/* Modern Animations */
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Dark Mode Enhancements */
-.dark-mode .ai-recommendation-card {
-  background: rgba(78, 115, 223, 0.2);
-  border-left-color: #4e73df;
-}
-
-.dark-mode .search-analytics {
-  background: #2a3042;
-  border: 1px solid #3e455b;
-}
-
-.dark-mode .search-result-item:hover {
-  background-color: rgba(78, 115, 223, 0.1);
-}
-
-/* Add to your style.css */
-.loading {
-  position: relative;
-  pointer-events: none;
-}
-
-.loading::after {
-  content: '';
+.toast-notification {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255,255,255,0.7);
-  z-index: 999;
-}
-
-.loading-spinner {
+  bottom: 20px;
+  right: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 15px 20px;
   display: flex;
-  justify-content: center;
-  padding: 2rem;
+  align-items: center;
+  max-width: 350px;
+  z-index: 1100;
+  transform: translateY(100px);
+  opacity: 0;
+  animation: slideIn 0.3s ease-out forwards;
+  border-left: 4px solid var(--primary-color);
 }
 
-.highlight {
-  background-color: #ffeb3b;
-  padding: 0 2px;
-  border-radius: 3px;
+.toast-notification.success {
+  border-left-color: var(--success-color);
 }
 
-.no-results {
-  text-align: center;
-  padding: 2rem;
-  color: #6c757d;
+.toast-notification.error {
+  border-left-color: var(--danger-color);
 }
 
-.no-results i {
-  font-size: 2rem;
-  margin-bottom: 1rem;
+.toast-notification.fade-out {
+  animation: slideOut 0.3s ease-in forwards;
+}
+
+.toast-icon {
+  font-size: 1.5rem;
+  margin-right: 15px;
+}
+
+.toast-message {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  margin-left: 10px;
+  color: var(--secondary-color);
+}
+
+@keyframes slideIn {
+  from { transform: translateY(100px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(100px); opacity: 0; }
+}
+
+/* Enhanced tooltip styles */
+.chart-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 100;
+  transition: all 0.1s ease;
+}
+
+.dark-mode .chart-tooltip {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--dark-color);
+}
+
+/* Export button dropdown */
+.export-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 5px 0;
+  z-index: 100;
+  display: none;
+}
+
+.dark-mode .export-dropdown {
+  background: var(--dark-card);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.export-dropdown.show {
   display: block;
 }
 
+.export-dropdown a {
+  display: block;
+  padding: 8px 15px;
+  color: var(--dark-color);
+  text-decoration: none;
+  white-space: nowrap;
+}
 
+.dark-mode .export-dropdown a {
+  color: var(--dark-text);
+}
 
+.export-dropdown a:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .search-meta {
-    flex-direction: column;
-  }
-  
-  .search-time {
-    margin-top: 0.5rem;
-  }
+.dark-mode .export-dropdown a:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
