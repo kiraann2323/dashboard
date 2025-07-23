@@ -110,6 +110,50 @@
   background-color: rgba(78, 115, 223, 0.1);
 }
 
+/* Add to your style.css */
+.loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.loading::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255,255,255,0.7);
+  z-index: 999;
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.highlight {
+  background-color: #ffeb3b;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+}
+
+.no-results i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+
+
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .search-meta {
