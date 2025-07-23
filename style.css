@@ -1,131 +1,122 @@
-body {
-  background-color: #f8f9fa;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+/* Add these new styles to your existing CSS */
+
+/* AI Recommendations */
+.ai-recommendations {
+  border-left: 4px solid #4e73df;
 }
 
-.card {
-  border: none;
-  border-radius: 10px;
-  transition: transform 0.2s;
+.ai-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  color: #6c757d;
 }
 
-.card:hover {
-  transform: translateY(-2px);
-}
-
-.chart-container {
-  position: relative;
-  height: 300px;
-}
-
-.metric-card {
-  padding: 15px;
+.ai-recommendation-card {
+  background: rgba(78, 115, 223, 0.1);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-left: 3px solid #4e73df;
+  transition: all 0.3s ease;
 }
 
-.metric-value {
-  font-size: 24px;
+.ai-recommendation-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ai-recommendation-card h6 {
+  color: #4e73df;
+  margin-bottom: 0.5rem;
+}
+
+.ai-recommendation-card .ai-confidence {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.ai-recommendation-card .ai-actions {
+  margin-top: 0.5rem;
+}
+
+/* Search Analytics */
+.search-analytics {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.search-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.search-stats {
   font-weight: bold;
+  color: #4e73df;
 }
 
-.metric-label {
-  font-size: 14px;
-  opacity: 0.9;
-}
-
-#recentTable tbody tr {
-  cursor: pointer;
-}
-
-#recentTable tbody tr:hover {
-  background-color: rgba(0,0,0,0.03);
-}
-
-.search-box {
-  position: relative;
-  width: 250px;
-}
-
-.search-box i {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
+.search-time {
+  font-size: 0.8rem;
   color: #6c757d;
 }
 
-.search-box input {
-  padding-left: 35px;
-  border-radius: 20px;
-  border: 1px solid #ddd;
-  height: 38px;
-  width: 100%;
+/* Enhanced Search Results */
+.search-result-item {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  transition: all 0.3s ease;
 }
 
-.search-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  text-align: center;
-  color: #6c757d;
+.search-result-item:hover {
+  background-color: rgba(78, 115, 223, 0.05);
 }
 
-.search-placeholder i {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+.search-result-highlight {
+  background-color: #fff9c4;
+  padding: 0 2px;
+  border-radius: 3px;
 }
 
-.loading-spinner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  text-align: center;
+/* Modern Animations */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
 }
 
-.spinner-border {
-  width: 3rem;
-  height: 3rem;
-  margin-bottom: 1rem;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.search-results-table {
-  width: 100%;
+/* Dark Mode Enhancements */
+.dark-mode .ai-recommendation-card {
+  background: rgba(78, 115, 223, 0.2);
+  border-left-color: #4e73df;
 }
 
-.search-results-table th {
-  background-color: #f8f9fa;
+.dark-mode .search-analytics {
+  background: #2a3042;
+  border: 1px solid #3e455b;
 }
 
-.no-results {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  text-align: center;
-  color: #6c757d;
+.dark-mode .search-result-item:hover {
+  background-color: rgba(78, 115, 223, 0.1);
 }
 
-.no-results i {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
+/* Responsive Adjustments */
 @media (max-width: 768px) {
-  .chart-container {
-    height: 250px;
+  .search-meta {
+    flex-direction: column;
   }
   
-  .metric-value {
-    font-size: 20px;
-  }
-  
-  .search-box {
-    width: 200px;
+  .search-time {
+    margin-top: 0.5rem;
   }
 }
