@@ -1,5 +1,5 @@
-// Configuration
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSE1BJj7v8U_RGXkX69arUql0J4SBlA5xyxW7uv17QeNmbuUmbpMtN8ZRTk8SFbdTpEFmzPWbgt_E1/pub?gid=0&single=true&output=csv";
+// Configuration - Replace with your Google Sheets URL
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSE1BJj7v8U_RGXkX69arUql0J4SBlA5xyxW7uv17QeNmbuUmbpMtN8ZRTk8SFbdTpEFmzPWbgt_E1/pub?output=csv";
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 // Global variables
@@ -855,7 +855,6 @@ function showDetailsModal(id) {
               <p>${record.Date ? new Date(record.Date).toLocaleString() : 'Date not available'}</p>
             </div>
           </div>
-          <!-- Additional timeline items would go here -->
         </div>
       </div>
     </div>
